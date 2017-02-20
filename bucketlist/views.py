@@ -1,15 +1,12 @@
 from flask import Flask, request
 from flask_restful import Resource
-from bucketlist.models import db, User
-from bucketlist.utils.validators import validate_user_input
+import jwt
+from bucketlist.models import db, User, BucketList
+from bucketlist.decorators.validators import validate_user_input
+from bucketlist.decorators.auth import check_api_key
 
-class Index(Resource):
-    def get(self):
-        return {"App Test":"I Work"}
+secret = "\xffI\x9b\xb4\x147\n\x88y+2\xeef\xd1\x1d\xae\xa8\xfa\xdf\xb7"
 
-    def post(self):
-        print(dict(request.form))
-        return {"App Test":"I Still Work"}
 
 class Auth(Resource):
 
@@ -23,62 +20,74 @@ class Auth(Resource):
             return {"error": "bad route"}, 404
 
     def login(self, request):
-        return {"message":"login successful"}
+        user = User.query.filter_by(email=request.form["email"]).first()
+        if not user or not user.verify_password(request.form["password"]):
+            return {"error": "wrong username/password"}
+
+        token = jwt.encode({'id': user.id}, secret, algorithm='HS256')
+        return {
+            "message": "login successful",
+            "access_token": token.decode('utf-8')
+        }
 
     @validate_user_input
     def register(self, request):
-        print("here")
         name = request.form["name"]
         email = request.form["email"]
         password = request.form["password"]
         user = User(name, email, password)
         db.session.add(user)
         db.session.commit()
-        return {"message":"Signup Successful"}, 201
+        return {"message": "Signup Successful"}, 201
 
-class BucketList(Resource):
-    def get(self, id = None):
+
+class BucketLists(Resource):
+
+    def get(self, id=None):
         if id:
-            #Get single bucket list
+            # Get single bucket list
             pass
         else:
-            #List all the created bucket lists
+            # List all the created bucket lists
             pass
 
-    def post(self, id = None):
+    @check_api_key
+    def post(self, id=None):
         if id:
-            #Throw error
+            # Throw error
             pass
         else:
-            #Create a new bucket list
+            # Create a new bucket list
             pass
 
-    def put(self, id = None):
-        #Update this bucket list
+    def put(self, id=None):
+        # Update this bucket list
         if id:
-            #Update this bucket list
+            # Update this bucket list
             pass
         else:
-            #Throw error
+            # Throw error
             pass
 
-    def delete(self, id = None):
+    def delete(self, id=None):
         if id:
-            #Delete this single bucket list
+            # Delete this single bucket list
             pass
         else:
-            #Throw error
+            # Throw error
             pass
+
 
 class BucketListItem(Resource):
 
-    def post(self, id = None, item_id = None):
-        #Create a new item in bucket list
-        pass
-    def put(self, id = None, item_id = None):
-        #Update a bucket list item
+    def post(self, id=None, item_id=None):
+        # Create a new item in bucket list
         pass
 
-    def delete(self, id = None, item_id = None):
-        #Delete an item in a bucket list
+    def put(self, id=None, item_id=None):
+        # Update a bucket list item
+        pass
+
+    def delete(self, id=None, item_id=None):
+        # Delete an item in a bucket list
         pass
