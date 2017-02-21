@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_restful import Resource
 import jwt
-from bucketlist.models import db, User, BucketList
+from bucketlist.models import db, User, BucketList, Item
 from bucketlist.decorators.validators import validate_user_input
 from bucketlist.decorators.auth import check_api_key
 
@@ -36,29 +36,36 @@ class Auth(Resource):
         email = request.form["email"]
         password = request.form["password"]
         user = User(name, email, password)
-        db.session.add(user)
-        db.session.commit()
         return {"message": "Signup Successful"}, 201
 
 
 class BucketLists(Resource):
 
-    def get(self, id=None):
+    @check_api_key
+    def get(self, id=None, user=None):
         if id:
             # Get single bucket list
             pass
         else:
             # List all the created bucket lists
-            pass
+            data = {"bucketlists": []}
+            bucketlists = User.query.get(user).bucketlists
+            for bucketlist in bucketlists:
+                data["bucketlists"].append(bucketlist.__repr__())
+            # bucketlists = BucketList.query.filter_by(created_by=user)
+            # for item in bucketlists.all():
+            #     data["bucketlists"].append(item.__repr__())
+            return(data)
 
     @check_api_key
-    def post(self, id=None):
-        if id:
+    def post(self, id=None, user=None):
+        print(user)
+        if user:
             # Throw error
-            pass
-        else:
-            # Create a new bucket list
-            pass
+            name = request.form["name"]
+            user_id = user
+            bucketlist = BucketList(name, user_id)
+            return bucketlist.__repr__()
 
     def put(self, id=None):
         # Update this bucket list
@@ -82,7 +89,11 @@ class BucketListItem(Resource):
 
     def post(self, id=None, item_id=None):
         # Create a new item in bucket list
-        pass
+        if id:
+            name = request.form['name']
+            bucketlist_item = Item(name, id)
+        else:
+            print("why!!")
 
     def put(self, id=None, item_id=None):
         # Update a bucket list item
