@@ -14,11 +14,10 @@ def check_api_key(func):
             return{"error": "Unauthorized"}, 401
         try:
             user_id = jwt.decode(request.headers['Api-Key'], secret)
-            print(user_id)
-            user = User.query.filter_by(id=user_id["id"]).first()
+            user = User.query.filter_by(id=user_id['id']).first()
             if not user:
                 return{"error": "Invalid Credentials"}, 401
+            return func(*args, user=user_id['id'])
         except InvalidTokenError:
             return{"error": "Invalid Credentials"}, 401
-        return func(*args, **kwargs)
     return wrapper
