@@ -9,8 +9,8 @@ db = SQLAlchemy()
 
 
 class DateMixin(object):
-    date_created = Column(DateTime, default=func.now())
-    date_modified = Column(DateTime, onupdate=func.now())
+    date_created = Column(DateTime(timezone=True), default=func.now())
+    date_modified = Column(DateTime(timezone=True),  onupdate=func.now())
 
 
 class Base(object):
@@ -30,7 +30,8 @@ class User(db.Model, DateMixin):
     name = Column(String(120), unique=False)
     password = Column(String(120))
     bucketlists_count = Column(Integer, default=0)
-    bucketlists = relationship("BucketList", back_populates="user")
+    bucketlists = relationship(
+        "BucketList", back_populates="user", uselist=True)
 
     def __init__(self, name=None, email=None, password=None):
         self.name = name
@@ -66,7 +67,7 @@ class BucketList(db.Model, Base, DateMixin):
         self.set_bucket_id()
 
     def __repr__(self):
-        bucketlist = {}
+        bucketlist = dict()
         bucketlist['id'] = self.bucket_id
         bucketlist['name'] = self.name
         bucketlist['items'] = []
@@ -101,7 +102,7 @@ class Item(db.Model, Base, DateMixin):
         self.set_item_id()
 
     def __repr__(self):
-        item = {}
+        item = dict()
         item['id'] = self.item_id
         item['name'] = self.name
         item['date_created'] = "{}".format(self.date_created)
