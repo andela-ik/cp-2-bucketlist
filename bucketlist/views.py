@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_restful import Resource
 import jwt
 from bucketlist.models import db, User, BucketList, Item
-from bucketlist.decorators.validators import validate_user_input
+from bucketlist.decorators.validators import *
 from bucketlist.decorators.auth import check_access_token
 
 secret = "\xffI\x9b\xb4\x147\n\x88y+2\xeef\xd1\x1d\xae\xa8\xfa\xdf\xb7"
@@ -25,10 +25,12 @@ class Auth(Resource):
             return {"error": "wrong username/password"}
 
         token = jwt.encode({'id': user.id}, secret, algorithm='HS256')
-        return {
+        response = {
             "message": "login successful",
             "access_token": token.decode('utf-8')
+
         }
+        return response
 
     @validate_user_input
     def register(self, request):
@@ -52,20 +54,19 @@ class BucketLists(Resource):
             bucketlists = User.query.get(user).bucketlists
             for bucketlist in bucketlists:
                 data["bucketlists"].append(bucketlist.__repr__())
-            # bucketlists = BucketList.query.filter_by(created_by=user)
-            # for item in bucketlists.all():
-            #     data["bucketlists"].append(item.__repr__())
             return(data)
 
     @check_access_token
+    @validate_bucket_list_data
     def post(self, id=None, user=None):
-        print(user)
+        url = request.path + "/{}"
         if user:
-            # Throw error
             name = request.form["name"]
             user_id = user
             bucketlist = BucketList(name, user_id)
-            return bucketlist.__repr__()
+            response = {"message": "Bucket List created successfuly"}
+            header = {"location": url.format(str(bucketlist.bucket_id))}
+            return response, 201, header
 
     @check_access_token
     def put(self, id=None, user=None):
@@ -89,6 +90,7 @@ class BucketLists(Resource):
 class BucketListItem(Resource):
 
     @check_access_token
+    @validate_bucket_list_item_data
     def post(self, id, user):
         # Create a new item in bucket list
         if id:
