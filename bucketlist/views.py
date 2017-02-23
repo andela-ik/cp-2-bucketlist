@@ -3,7 +3,7 @@ from flask_restful import Resource
 import jwt
 from bucketlist.models import db, User, BucketList, Item
 from bucketlist.decorators.validators import validate_user_input
-from bucketlist.decorators.auth import check_api_key
+from bucketlist.decorators.auth import check_access_token
 
 secret = "\xffI\x9b\xb4\x147\n\x88y+2\xeef\xd1\x1d\xae\xa8\xfa\xdf\xb7"
 
@@ -41,7 +41,7 @@ class Auth(Resource):
 
 class BucketLists(Resource):
 
-    @check_api_key
+    @check_access_token
     def get(self, id=None, user=None):
         if id:
             # Get single bucket list
@@ -57,7 +57,7 @@ class BucketLists(Resource):
             #     data["bucketlists"].append(item.__repr__())
             return(data)
 
-    @check_api_key
+    @check_access_token
     def post(self, id=None, user=None):
         print(user)
         if user:
@@ -67,7 +67,8 @@ class BucketLists(Resource):
             bucketlist = BucketList(name, user_id)
             return bucketlist.__repr__()
 
-    def put(self, id=None):
+    @check_access_token
+    def put(self, id=None, user=None):
         # Update this bucket list
         if id:
             # Update this bucket list
@@ -87,18 +88,17 @@ class BucketLists(Resource):
 
 class BucketListItem(Resource):
 
-    def post(self, id=None, item_id=None):
+    @check_access_token
+    def post(self, id, user):
         # Create a new item in bucket list
         if id:
             name = request.form['name']
             bucketlist_item = Item(name, id)
-        else:
-            print("why!!")
 
-    def put(self, id=None, item_id=None):
+    def put(self, id=None, item_id=None, user=None):
         # Update a bucket list item
         pass
 
-    def delete(self, id=None, item_id=None):
+    def delete(self, id=None, item_id=None, user=None):
         # Delete an item in a bucket list
         pass
