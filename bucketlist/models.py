@@ -17,21 +17,28 @@ class Base(object):
     id = Column(Integer, primary_key=True)
     name = Column(String(120))
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base(cls=Base)
 
 
-class User(db.Model, DateMixin):
+class User(db.Model, Base, DateMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    email = Column(String(120), unique=True)
-    name = Column(String(120), unique=False)
-    password = Column(String(120))
+    email = Column(String(150), unique=True)
+    name = Column(String(150), unique=False)
+    password = Column(String(300))
     bucketlists_count = Column(Integer, default=0)
     bucketlists = relationship(
-        "BucketList", back_populates="user", uselist=True)
+        "BucketList", back_populates="user", uselist=True, lazy='dynamic')
 
     def __init__(self, name=None, email=None, password=None):
         self.name = name
@@ -39,11 +46,16 @@ class User(db.Model, DateMixin):
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(password.encode('utf-8'), salt)
         self.password = hash
-        db.session.add(self)
-        db.session.commit()
+        self.save()
 
     def verify_password(self, password):
         password = password.encode('utf-8')
+        print(type(self.password))
+
+        # TODO:sort postgres hashed password storage issue
+        if type(self.password) is not bytes:
+            self.password = bytes(self.password, 'UTF-8')
+            print(self.password)
         if bcrypt.hashpw(password, self.password) == self.password:
             return True
 
@@ -57,13 +69,13 @@ class BucketList(db.Model, Base, DateMixin):
     bucket_id = Column(Integer)
     items_count = Column(Integer, default=0)
     user = relationship("User", back_populates="bucketlists")
-    items = relationship("Item", back_populates="bucketlist")
+    items = relationship("Item", back_populates="bucketlist", lazy='dynamic',
+                         cascade="all, delete-orphan")
 
     def __init__(self, name, user_id):
         self.name = name.title()
         self.created_by = user_id
-        db.session.add(self)
-        db.session.commit()
+        self.save()
         self.set_bucket_id()
 
     def __repr__(self):
@@ -81,6 +93,7 @@ class BucketList(db.Model, Base, DateMixin):
 
     # TODO: Implement Tigger
     def set_bucket_id(self):
+        print(self.user.bucketlists_count)
         self.user.bucketlists_count += 1
         self.bucket_id = self.user.bucketlists_count
         db.session.add(self)
@@ -92,13 +105,13 @@ class Item(db.Model, Base, DateMixin):
     status = Column(Boolean, default=False)
     item_id = Column(Integer)
     bucketlist_id = Column(Integer, ForeignKey('bucketlist.id'))
-    bucketlist = relationship("BucketList", back_populates="items")
+    bucketlist = relationship(
+        "BucketList", back_populates="items")
 
     def __init__(self, name, bucketlist):
         self.name = name
         self.bucketlist_id = bucketlist
-        db.session.add(self)
-        db.session.commit()
+        self.save()
         self.set_item_id()
 
     def __repr__(self):
@@ -114,5 +127,4 @@ class Item(db.Model, Base, DateMixin):
     def set_item_id(self):
         self.bucketlist.items_count += 1
         self.item_id = self.bucketlist.items_count
-        db.session.add(self)
-        db.session.commit()
+        self.save()
