@@ -13,9 +13,7 @@ password = "password123A"
 class BaseTest(unittest.TestCase):
 
     def init_test_app(self):
-        run.app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + \
-            tempfile.mkstemp()[1]
-        run.app.config['TESTING'] = True
+        run.app.config.from_object('config.Testing')
         app = run.app.test_client()
         db.create_all()
         return app
@@ -25,12 +23,19 @@ class BaseTest(unittest.TestCase):
         payload = {"name": name, "email": email, "password": password}
         self.app.post(url, data=payload)
 
+    def create_test_bucket_list(self):
+        url = "/bucketlists"
+        payload = {"name": "test"}
+        response = self.app.post(url, data=payload, headers=self.headers)
+        print(response.headers)
+
     def login_test_user(self):
         url = "/auth/login"
         payload = {"email": email, "password": password}
         response = self.app.post(
             url, data=payload)
         response = json.loads(response.data)
+        print(response)
         return response
 
     def setUp(self):
@@ -38,6 +43,7 @@ class BaseTest(unittest.TestCase):
         self.create_test_user()
         self.access_token = self.login_test_user()["access_token"]
         self.headers = {"access_token": self.access_token}
+        self.create_test_bucket_list()
         # TODO: create test bucket list and item
 
     #

@@ -13,21 +13,22 @@ class AuthenticationTestCase(BaseTest):
         assert response.status, 200
 
     def test_invalid_credentials_login(self):
-        payload = {"email": "an@asas.co", "password": "wrong_password"}
+        payload = {"email": "an@asas.co", "password": "wrongpassword"}
         response = self.app.post(login_url, data=payload)
-        assert "error" in response.data.decode()
+        assert "access_token" not in response.data.decode()
         assert response.status, 200
 
     def test_signup_email_validation(self):
         name = "ian"
-        email = "an@asas.co"
+        email = "anasas.co"
         payload = {"name": name, "email": email, "password": "password123A"}
         response = self.app.post(signup_url, data=payload)
-        assert "error" in response.data.decode()
+        print(response.data.decode())
+        assert response.status, 422
 
     def test_signup_unique_email_validation(self):
         name = "ian"
-        email = "anasas.co"
+        email = "an@asas.co"
         payload = {"name": name, "email": email, "password": "password123A"}
         response = self.app.post(signup_url, data=payload)
         assert "error" in response.data.decode()
@@ -37,4 +38,5 @@ class AuthenticationTestCase(BaseTest):
         email = "atest@email.com"
         payload = {"name": name, "email": email, "password": "short"}
         response = self.app.post(signup_url, data=payload)
-        assert "error" in response.data.decode()
+        print(response.data.decode())
+        assert response.status, 422
