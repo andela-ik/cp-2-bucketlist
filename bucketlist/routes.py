@@ -1,7 +1,10 @@
 from flask_restful import Api
-from bucketlist.views import Auth, BucketLists, BucketListItem
+from bucketlist.views import Auth, BucketLists, BucketListItem, Index
 
 api = Api()
+
+# route to github repository
+api.add_resource(Index, '/')
 
 # route to handle user registration and login
 api.add_resource(Auth, '/auth/<string:action>')
